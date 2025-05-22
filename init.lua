@@ -18,8 +18,8 @@ end
 ---@param cmd string
 ---@return string
 local function replace_placeholders(cmd)
-    cmd = cmd:gsub("{test_file}", CommandoUtils.get_test_file())
-    cmd = cmd:gsub("{test_nearest}", CommandoUtils.get_nearest_test())
+    cmd = cmd:gsub("{test_file}", CommandoUtils.get_test_file() or "")
+    cmd = cmd:gsub("{test_nearest}", CommandoUtils.get_nearest_test() or "")
     return cmd
 end
 
@@ -30,12 +30,13 @@ harpoon:setup({
         ---@param list unknown
         ---@param options unknown
         select = function(list_item, list, options)
-            Commando.run(list_item.context.row)
+            local cmd = replace_placeholders(list_item.value)
+            run_in_tmux(cmd)
         end,
     },
 })
 
---- @type HarpoonList
+---@type HarpoonList
 Commando.commando_list = harpoon:list("commando")
 
 --- Show Harpoon UI for Commando list
@@ -47,16 +48,7 @@ function Commando.show()
     })
 end
 
---- Run command from Harpoon list by index
----@param index integer
-function Commando.run(index)
-    local item = Commando.commando_list:get(index)
-    if item and item.value then
-        local cmd = replace_placeholders(item.value)
-        run_in_tmux(cmd)
-    else
-        vim.notify("No command found at index " .. index, vim.log.levels.WARN)
-    end
-end
+-- Alias run to select on the list
+Commando.run = function(index) Commando.commando_list:select(index) end
 
 return Commando
