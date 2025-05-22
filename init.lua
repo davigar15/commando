@@ -1,6 +1,7 @@
 ---@module 'commando'
 local harpoon = require("harpoon")
-local CommandoUtils = require("commando.utils")
+local utils = require("commando.utils")
+local state = require("commando.state")
 
 ---@class Commando
 local Commando = {}
@@ -18,8 +19,8 @@ end
 ---@param cmd string
 ---@return string
 local function replace_placeholders(cmd)
-    cmd = cmd:gsub("{test_file}", CommandoUtils.get_test_file() or "")
-    cmd = cmd:gsub("{test_nearest}", CommandoUtils.get_nearest_test() or "")
+    cmd = cmd:gsub("{test_file}", utils.get_test_file() or "")
+    cmd = cmd:gsub("{test_nearest}", utils.get_nearest_test() or "")
     return cmd
 end
 
@@ -31,6 +32,7 @@ harpoon:setup({
         ---@param options unknown
         select = function(list_item, list, options)
             local cmd = replace_placeholders(list_item.value)
+            state.set_last_command(cmd)
             run_in_tmux(cmd)
         end,
     },
@@ -50,5 +52,11 @@ end
 
 -- Alias run to select on the list
 Commando.run = function(index) Commando.commando_list:select(index) end
+Commando.run_latest = function()
+    local latest_command = state.get_last_command()
+    if latest_command then
+        run_in_tmux(latest_command)
+    end
+end
 
 return Commando
